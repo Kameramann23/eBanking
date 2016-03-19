@@ -2,58 +2,25 @@ import java.io.*;
 import java.util.Date;
 
 class Account{
-	private String name;
 	private Double balance;
 	private Integer accountNumber;
-	private String password;
 	private String status;
-	private Loan[] loanList;
-	private static int loanCount=0;
 	private static int nextAccountNumber=16000;
 	public static final double interest = 4.00;
 	
-	private Account(String name, Double balance, String password){
-		this.name=name;
+	private Account(Double balance){
 		this.balance=balance;
 		accountNumber=nextAccountNumber++;
-		this.password=password;
 		if(balance>=0) status= "active";
-		loanList= new Loan[10];
-
 	}
 	
 	public void showAccountDetails(){
-		System.out.print("Name: ");
-		System.out.println(this.getName());
 		System.out.print("Account Number: ");
 		System.out.print(this.getAccountNumber());
 		System.out.print("Current Balance: ");
 		System.out.println(this.getAccountBalance());
 		System.out.print("Account Status: ");
 		System.out.println(this.getStatus());
-		showAllLoanDetails();
-	}
-
-	public void showAllLoanDetails(){
-		System.out.print("Total Loans Issued are: ");
-		System.out.println(loanList.length);
-		for(Loan loan : loanList){
-			if(loan.status=="active") loan.showLoanDetails();
-		}
-	}
-
-	public void payLoanDueAmount(Integer loanID){
-		for(Loan loan : loanList){
-			if ( loan.getLoanID() == loanID ){
-				if(loan.getDueAmount()<balance){
-					System.out.println("Sorry! Not enough balance in your account");
-				}
-				else {
-					balance-=loan.getDueAmount();
-					loan.status="inactive";
-				}
-			}
-		}
 	}
 
 	public void deposit(int amount){
@@ -79,14 +46,9 @@ class Account{
 		}
 	}
 	
-	public String getName(){
-		return name;
-	}
-	
 	public String getStatus(){
 		return status;
 	}
-	
 	
 	public int getAccountNumber(){
 		return accountNumber;
@@ -95,91 +57,9 @@ class Account{
 	public Double getAccountBalance(){
 		return balance;
 	}
-
-	public void issueNewLoan(String type,int amount,byte tenureInYears){
-		if (loanCount>9) {
-			System.out.println("Sorry! You cannot have more than 10 loans");
-			return;
-		}
-		else if(this.getTotalLoanAmount()+amount>1000000){
-			System.out.println("Sorry! You cannot take loan more than one million rupees.");
-			return;
-		}
-		else if(type=="HomeLoan") {
-			loanList[loanCount++]= new HomeLoan(amount,tenureInYears);
-			System.out.println("Your loan is issued");
-			loanList[loanCount-1].showLoanDetails();
-		}
-		else if(type=="EducationLoan") {
-			loanList[loanCount++]= new EducationLoan(amount,tenureInYears);
-		}
-	}
-	public double getTotalLoanAmount(){
-		float temp=0;
-		for(int i=0;i<loanCount;i++){
-			temp+=loanList[i].amount;
-		}
-		return temp;
-	}
-	public static Account openNewAccount() throws IOException{
-		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-		String name;
-		Double amount;
-		String password;
-		do{
-			System.out.println("Lets open a new Account");
-			System.out.println("Your full name please?");
-			name= new String(br.readLine().toUpperCase());
-			if(name.matches("[A-Z]+\\s[A-Z]+")){
-				System.out.println("Welcome "+ name);
-				break;
-			}
-			else{
-				System.out.println("Sorry the format of name should be \"FirstName LastName\"");
-			}
-		}while(true);
-
-		// Input Amount
-		do{
-			try{
-				System.out.println("How much money would you like to deposit now? Minimum amount to open an account is Rs.1000");
-				amount = Double.parseDouble(br.readLine());
-				if(amount<1000) System.out.println("Sorry we cant open an amount with amount " + amount.toString());
-				else {
-					System.out.println("Okay! You will have "+ amount.toString() + " as opening balance"); 
-					break;
-				}
-			}
-			catch(NumberFormatException e){
-				System.out.println("Please enter a number as an Amount");
-			}
-		}while(true);
-		// input password
-		System.out.println("Choose a password to access your account");
-		password = new String(br.readLine());
-		return new Account(name,amount,password);
-	}	
+	
 }
 
-
-class Accounts{
-	private Account[] customers;
-	public static boolean flag=false;
-	private Accounts(){
-		customers = new Account[1000];
-	}
-
-	public static Accounts createAccountsDirectry(){
-		//if(flag==false)
-			return new Accounts();
-	} 
-
-	public void newAccount() throws IOException{
-		Account temp = Account.openNewAccount();
-		customers[temp.getAccountNumber()-16000]=temp;
-	}
-
-}
 
 
 abstract class Loan{
@@ -300,18 +180,244 @@ class User{
 	public String name;
 	public String userName;
 	public String password;
+
+	public User(String name, String userName, String password){
+		this.name=name;
+		this.userName=userName;
+		this.password=password;
+	}
 }
 
 class Admin extends User{
-
+	Bank bank;
+	public Admin(String name, String userName, String password){
+		super(name,userName,password);
+	}
 }
 
 class Customer extends User{
+	private ArrayList<Account> accounts = new ArrayList<Account>();
+	private ArrayList<Loan> loanList = new ArrayList<Loan>();
+	public Customer(String name, String userName, String password){
+		super(name,userName,password);
+	}
 
+	public void showAllLoanDetails(){
+		System.out.print("Total Loans Issued are: ");
+		System.out.println(loanList.size());
+		for(Loan loan : loanList){
+			if(loan.status=="active") loan.showLoanDetails();
+		}
+	}
+
+	public double getTotalLoanAmount(){
+		double temp=0;
+		for(int i=0;i<loanCount;i++){
+			temp+=loanList[i].amount;
+		}
+		return temp;
+	}
+
+	public void openNewAccount() throws IOException{
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Double amount;
+		// Input Amount
+		do{
+			try{
+				System.out.println("How much money would you like to deposit now? Minimum amount to open an account is Rs.1000");
+				amount = Double.parseDouble(br.readLine());
+				if(amount<1000) System.out.println("Sorry we cant open an account with amount " + amount.toString());
+				else {
+					System.out.println("Okay! You will have "+ amount.toString() + " as opening balance"); 
+					break;
+				}
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter a number as an Amount");
+			}
+		}while(true);
+		Account temp = new Account(amount);
+		if(account.add(temp)) {
+			System.out.println("Account created.");
+			temp.showAccountDetails();
+		}
+	}	
+
+	public void issueNewLoan(){
+		if (loanList.size()>10) {
+			System.out.println("Sorry! You cannot have more than 10 loans");
+			return;
+		}
+		
+		String type;
+		Integer amount;
+		Double tenureInYears;
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		do{
+			System.out.println("Enter Type of your loan:\nEnter \"HomeLoan\" for Home Loan\nEnter \"EducationLoan\" for Education Loan");
+			type = new String(br.readLine());
+			if(type.equals("HomeLoan") || type.equals("EducationLoan")) break;
+			else{
+				System.out.println("Please enter one of the two mentioned types.\n Note: Enter type without quotes.")
+			}
+		}while(true);
+		do{
+			System.out.println("Enter loan amount");
+			amount = Integer.parseInt(br.readLine());
+			if(this.getTotalLoanAmount()+amount>1000000){
+			System.out.println("Sorry! We donot lend more than one million rupees per customer. Try a small amount.");
+			}
+			else{
+				break;
+			}
+		}while(true);
+
+		do{
+			System.out.println("Enter loan duration in years");
+			tenureInYears = Double.parseDouble(br.readLine());
+			if(tenureInYears<=0){
+			System.out.println("Sorry! duration cannot be 0");
+			}
+			else{
+				break;
+			}
+		}while(true);
+
+
+		if(type=="HomeLoan") {
+			HomeLoan temp = new HomeLoan(amount,tenureInYears);
+			if(loanList.add(temp)){
+				System.out.println("Your loan is issued");
+				temp.showLoanDetails();
+				break;
+			}
+		}
+		if(type=="EducationLoan") {
+			EducationLoan temp = new EducationLoan(amount,tenureInYears);
+			if(loanList.add(temp)){
+				System.out.println("Your loan is issued");
+				temp.showLoanDetails();
+				break;
+			}
+		}
+	}
+
+//	public void payLoanDueAmount(Integer loanID){
+		for(Loan loan : loanList){
+			if ( loan.getLoanID() == loanID ){
+				if(loan.getDueAmount()<balance){
+					System.out.println("Sorry! Not enough balance in your account");
+				}
+				else {
+					balance-=loan.getDueAmount();
+					loan.status="inactive";
+				}
+			}
+		}
+	}
 }
 
 class Bank{
-	
+	private Admin admin;
+	private ArrayList<Customer> customers = new ArrayList<Customer>();
+	private Integer totalMoneyWithBank=10000000;
+	private Integer totalMoneyleased=0;
+	private boolean bankStarted=flase;
+	public static Bank bank;
+	public static int customerID=0;
+
+	private Bank(){
+		admin = new Admin("Gopal Goel","admin","admin");
+		admin.bank=this;
+		bank=this;
+		bankStarted=false;
+		customers = new Customer[1000];
+	}
+	public static Bank getBank(){
+		if(bankStarted==false){
+			return new Bank();
+		}
+		else return bank;
+	}
+
+	public void addCustomers(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		String name;
+		String userName;
+		String password;
+
+		//input name
+		do{
+			System.out.println("Your full name please?");
+			name= new String(br.readLine().toUpperCase());
+			if(name.matches("[A-Z]+\\s[A-Z]+")){
+				System.out.println("Welcome "+ name);
+				break;
+			}
+			else{
+				System.out.println("Sorry the format of name should be \"FirstName LastName\"");
+			}
+		}while(true);
+
+		// input username
+		do{
+			System.out.println("Choose a username containing only letters.");
+			userName= new String(br.readLine());
+			if(userName.matches("[a-zA-Z]+")){
+				if(checkUsername(userName)){
+					System.out.println("Username already exists. Please Choose another.");
+				}
+				else{
+					System.out.println("Your username is: "+ name);
+					break;
+				}
+			}
+			else{
+				System.out.println("Invalid username.");
+			}
+		}while(true);
+
+		// input password
+		do{
+			System.out.println("Choose a password.");
+			password= new String(br.readLine());
+			System.out.println("Type your chosen password again.");
+			String temp= new String(br.readLine());
+			if(password.equals(temp)){
+				System.out.println("Password chosen succesfully.");
+				break;
+			}
+			else{
+				System.out.println("Passwords didn't match.");
+			}
+		}while(true);
+
+		Customer newCustomer = new Customer(name,userName,password);
+		if(customers.add(newCustomer)) System.out.println("You are now our customer.");
+
+	}
+
+	private Customer customerLogin(String userName, String password){
+		Customer temp=null;
+		for(int i=0;i<customers.size();i++){
+			if(customers[i].userName.equals(userName) && customers[i].password.equals(password)) temp = customers[i];
+		}
+		return temp;
+	}
+
+	private boolean checkUsername(String userName){
+		for(Customer customer : customers){
+			if customer.username.equals(userName) return true;
+		}
+		return false;
+	}
+
+	private boolean checkPassword(String password){
+		for(Customer customer : customers){
+			if customer.password.equals(userName) return true;
+		}
+		return false;
+	}
 }
 	
 public class Test {
@@ -355,3 +461,37 @@ public class Test {
 	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
