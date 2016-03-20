@@ -23,7 +23,22 @@ class Account{
 		System.out.println(this.getStatus());
 	}
 
-	public void deposit(int amount){
+	public void deposit(){
+		Integer amount;	
+		Integer input = 1;
+		do{
+			System.out.println("How much money you want to deposit?");
+			amount = Integer.parseInt(br.readLine());
+			if(amount>0){
+			}
+			else{
+				System.out.println("Amount can not be 0 or negative. Please enter a positive amount.");
+				System.out.println("Press 1 to try again");
+				System.out.println("Press 0 to go back to previous menu");
+				input= Integer.parseInt(br.readLine());
+			}
+		}while(input!=0);
+
 		double temp=balance;
 		balance+=amount;
 		if(temp<1000) {
@@ -202,6 +217,32 @@ class Customer extends User{
 		super(name,userName,password);
 	}
 
+	public Account getAccount(){
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		Integer accountNumber;
+		Account temp;
+		Integer input = 1 ;
+		do{
+			System.out.println("Enter your account no");
+			accountNumber=Integer.parseInt(br.readLine());
+			for(Account account : accounts){
+				if(account.accountNumber==accountNumber){
+					temp=account;
+				}
+			}
+			if(temp==null){
+				System.out.println("No account with that account Number");
+				System.out.println("Press 1 to try again");
+				System.out.println("Press 0 to go back to previous menu");
+				input= Integer.parseInt(br.readLine());
+			}
+			else{
+				break;
+			}
+		}while(input!=0);
+		return temp;
+	}
+
 	public void showAllLoanDetails(){
 		System.out.print("Total Loans Issued are: ");
 		System.out.println(loanList.size());
@@ -330,7 +371,7 @@ class Bank{
 		admin = new Admin("Gopal Goel","admin","admin");
 		admin.bank=this;
 		bank=this;
-		bankStarted=false;
+		bankStarted=true;
 		customers = new Customer[1000];
 	}
 	public static Bank getBank(){
@@ -393,15 +434,38 @@ class Bank{
 		}while(true);
 
 		Customer newCustomer = new Customer(name,userName,password);
-		if(customers.add(newCustomer)) System.out.println("You are now our customer.");
-
+		if(customers.add(newCustomer)) {
+			System.out.println("You are now our customer.");
+			newCustomer.showCustomerDetails();
+		}
 	}
 
-	private Customer customerLogin(String userName, String password){
+	private Customer customerLogin(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
 		Customer temp=null;
-		for(int i=0;i<customers.size();i++){
-			if(customers[i].userName.equals(userName) && customers[i].password.equals(password)) temp = customers[i];
-		}
+		Integer input = 1;
+		do{
+			System.out.println("Enter username");
+			userName= new String(br.readLine());
+			System.out.println("Enter password.");
+			password= new String(br.readLine());
+			temp=null;
+			for(int i=0;i<customers.size();i++){
+				if(customers[i].userName.equals(userName) && customers[i].password.equals(password)){ 
+					temp = customers[i];
+				}
+			}
+			if (temp==null){
+				System.out.println("username and password didnt match.");
+				System.out.println("Press 1 to try again");
+				System.out.println("Press 0 to go back to previous menu");
+				input= Integer.parseInt(br.readLine());
+			}
+			else{
+				System.out.println("Logging in..");
+				break;
+			}
+		}while(input!=0);
 		return temp;
 	}
 
@@ -426,14 +490,89 @@ public class Test {
 		System.out.println("Welcome to the Bank of Westeros");
 		System.out.println("===============================");
 		Accounts dir = Accounts.createAccountsDirectry();
-
-		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-		int input;
+		Bank icici = getBank();
 		do{
-		showUserMenu();
-		input=Integer.parseInt(br.readLine());
-		}while(input!=8);
+			showStartMenu();
+			BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+			int input;
+			input=Integer.parseInt(br.readLine());
+			if(input==1) {
+				do{
+					showUserMenu();
+					input = Integer.parseInt(br.readLine());
+					if(input==1){
+						Customer cust = icici.customerLogin();
+						if(cust==null){}
+						else{
+							do{
+								showCustomerMenu();
+								input=Integer.parseInt(br.readLine());
+								if(input==1){ // open account
+									cust.openNewAccount();
+								}
+								else if(input==2){ // deposit money
+									Account temp = cust.getAccount();
+									if(temp==null){}
+									else{
+										temp.deposit();
+									}
+								}
+								else if(input==3){
+									Account temp = cust.getAccount();
+									if(temp==null){}
+									else{
+										temp.withdraw();
+									}									
+								}
+								else if(input==4){
+									Account temp = cust.getAccount();
+									if(temp==null){}
+									else{
+										temp.showAccountDetails();
+									}	
+									
+								}
+								if(input==5){
+									cust.issueNewLoan();
+								}
+								if(input==6){
+									
+								}
+								if(input==7){
+									
+								}
+							}while(input!=0);
+						}
+					}
+					else if(input==2){
+						icici.addCustomers();
+					}
+					else if(input!=0){
+					System.out.println("Please select one of the above option");
+					}
+
+				}while(input!=0);
+			}
+
+			else if(input==2){
+				do{
+
+				}while(input!=0);
+			}
+
+			else if(input!=0){
+				System.out.println("Please select one of the above option");
+			}
+
+		}while(input!=0);
 		
+	}
+
+	public static void showStartMenu(){
+		System.out.println();
+		System.out.println("Press 1 if you are a user");
+		System.out.println("Press 2 if you are a admin");
+		System.out.println("Press 0 to exit");
 	}
 
 	public static void showAdminMenu(){
@@ -445,18 +584,26 @@ public class Test {
 		System.out.println("Press 5 to change interest rate");
 		System.out.println("Press 6 to change loan rate");
 		System.out.println("Press 7 for other activities");
-		System.out.println("Press 8 to exit");
+		System.out.println("Press 0 to exit");
 	}
+
 	public static void showUserMenu(){
 		System.out.println();
-		System.out.println("Press 1 to deposit money");
-		System.out.println("Press 2 to withdraw money");
-		System.out.println("Press 3 to check account balance");
-		System.out.println("Press 4 to open a new account");
+		System.out.println("Press 1 if you are already a customer of our bank");
+		System.out.println("Press 2 to register youself as a customer");
+		System.out.println("Press 0 to go back to previous menu");
+	}
+
+	public static void showCustomerMenu(){
+		System.out.println();
+		System.out.println("Press 1 to open a new account");
+		System.out.println("Press 2 to deposit money");
+		System.out.println("Press 3 to withdraw money");
+		System.out.println("Press 4 to check account balance");
 		System.out.println("Press 5 to apply for a loan");
 		System.out.println("Press 6 to make a fixed deposit");
 		System.out.println("Press 7 for other activities");
-		System.out.println("Press 8 to exit");
+		System.out.println("Press 0 to go to previous menu");
 		
 	}
 
