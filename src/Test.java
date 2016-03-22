@@ -1,18 +1,21 @@
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Date;
 
 class Account{
 	private Double balance;
+	private Double profit;
 	private Integer accountNumber;
 	private String status;
 	private static int nextAccountNumber=16000;
 	public static final double interest = 4.00;
 	
-	private Account(Double balance){
+	Account(Double balance){
 		this.balance=balance;
 		accountNumber=nextAccountNumber++;
 		if(balance>=0) status= "active";
 	}
+	
 	
 	public void showAccountDetails(){
 		System.out.print("Account Number: ");
@@ -23,13 +26,23 @@ class Account{
 		System.out.println(this.getStatus());
 	}
 
-	public void deposit(){
+	public void deposit() throws IOException{
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
 		Integer amount;	
 		Integer input = 1;
 		do{
 			System.out.println("How much money you want to deposit?");
 			amount = Integer.parseInt(br.readLine());
 			if(amount>0){
+				double temp=balance;
+				balance+=amount;
+				if(temp<1000) {
+					System.out.println("Rs. 100 is deducted as your account balance was below \"Minimum Balance\" i.e Rs. 1000, before this transaction.");
+					balance-=100;
+				}
+				System.out.println("Your updated balance is: " + balance.toString());
+				if(balance>=0) status="active";
+				else status="frozen";
 			}
 			else{
 				System.out.println("Amount can not be 0 or negative. Please enter a positive amount.");
@@ -38,27 +51,32 @@ class Account{
 				input= Integer.parseInt(br.readLine());
 			}
 		}while(input!=0);
-
-		double temp=balance;
-		balance+=amount;
-		if(temp<1000) {
-			System.out.println("Rs. 100 is deducted as your account balance was below \"Minimum Balance\" i.e Rs. 1000, before this transaction.");
-			balance-=100;
-		}
-		System.out.println("Your updated balance is: " + balance.toString());
-		if(balance>=0) status="active";
-		else status="frozen";
 	}
 	
-	public void withdraw(int amount){
-		if(amount<=balance+1000){
-			balance-=amount;
-			System.out.println("Your updated balance is: " + balance.toString());
-			if(balance<0) status="frozen";
-		}
-		else{
-			System.out.println("You donot have enough balance to withdraw");
-		}
+	public void withdraw() throws IOException{
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Integer amount;	
+		int input=0;
+		do{
+			System.out.println("How much money you want to withdraw?");
+			amount = Integer.parseInt(br.readLine());
+			if(amount>0){
+				if(amount<=balance+1000){
+					balance-=amount;
+					System.out.println("Your updated balance is: " + balance.toString());
+					if(balance<0) status="frozen";
+				}
+				else{
+					System.out.println("You donot have enough balance to withdraw");
+				}
+			}
+			else{
+				System.out.println("Amount can not be 0 or negative. Please enter a positive amount.");
+				System.out.println("Press 1 to try again");
+				System.out.println("Press 0 to go back to previous menu");
+				input= Integer.parseInt(br.readLine());
+			}
+		}while(input!=0);
 	}
 	
 	public String getStatus(){
@@ -81,16 +99,16 @@ abstract class Loan{
 	protected double amount;
 	protected Date startDate;
 	protected Date endDate;
-	protected byte tenureInYears;
+	protected Double tenureInYears;
 	public String status;
 	private int loanID;
 	private static int loanIssueNumber=1;
-	public Loan(int amount,byte tenureInYears){
+	public Loan(int amount,Double tenureInYears2){
 		this.amount=amount;
-		this.tenureInYears=tenureInYears;
+		this.tenureInYears=tenureInYears2;
 		startDate = new Date();
 		endDate = new Date();
-		endDate.setYear(startDate.getYear()+tenureInYears);
+		endDate.setYear((int) (startDate.getYear()+tenureInYears2));
 		status="active";
 		loanID=loanIssueNumber++;
 	}
@@ -120,7 +138,7 @@ class EducationLoan extends Loan{
 	public static double rate = 10.0;
 	private double amountDue;
 
-	public EducationLoan(int amount, byte tenureInYears){
+	public EducationLoan(int amount, Double tenureInYears){
 		super(amount,tenureInYears);
 		amountDue=amount*tenureInYears*(100+rate)/100.0;
 	}
@@ -158,7 +176,7 @@ class HomeLoan extends Loan{
 	public static double rate = 15.0;
 	private double amountDue;
 	
-	public HomeLoan(int amount, byte tenureInYears){
+	public HomeLoan(int amount, Double tenureInYears){
 		super(amount,tenureInYears);
 		amountDue=amount*tenureInYears*(100+rate)/100;
 	}
@@ -208,6 +226,12 @@ class Admin extends User{
 	public Admin(String name, String userName, String password){
 		super(name,userName,password);
 	}
+	public Object getUserName() {
+		return userName;
+	}
+	public Object getPassword(){
+		return password;
+	}
 }
 
 class Customer extends User{
@@ -217,20 +241,20 @@ class Customer extends User{
 		super(name,userName,password);
 	}
 
-	public Account getAccount(){
+	public Account getAccount() throws IOException{
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		Integer accountNumber;
-		Account temp;
+		Account temp = null;
 		Integer input = 1 ;
 		do{
 			System.out.println("Enter your account no");
 			accountNumber=Integer.parseInt(br.readLine());
 			for(Account account : accounts){
-				if(account.accountNumber==accountNumber){
+				if(account.getAccountNumber()==accountNumber){
 					temp=account;
 				}
 			}
-			if(temp==null){
+			if(temp ==null){
 				System.out.println("No account with that account Number");
 				System.out.println("Press 1 to try again");
 				System.out.println("Press 0 to go back to previous menu");
@@ -253,8 +277,8 @@ class Customer extends User{
 
 	public double getTotalLoanAmount(){
 		double temp=0;
-		for(int i=0;i<loanCount;i++){
-			temp+=loanList[i].amount;
+		for(Loan loan : loanList){
+			temp+=loan.amount;
 		}
 		return temp;
 	}
@@ -278,13 +302,13 @@ class Customer extends User{
 			}
 		}while(true);
 		Account temp = new Account(amount);
-		if(account.add(temp)) {
+		if(accounts.add(temp)) {
 			System.out.println("Account created.");
 			temp.showAccountDetails();
 		}
 	}	
 
-	public void issueNewLoan(){
+	public void issueNewLoan() throws IOException{
 		if (loanList.size()>10) {
 			System.out.println("Sorry! You cannot have more than 10 loans");
 			return;
@@ -299,7 +323,7 @@ class Customer extends User{
 			type = new String(br.readLine());
 			if(type.equals("HomeLoan") || type.equals("EducationLoan")) break;
 			else{
-				System.out.println("Please enter one of the two mentioned types.\n Note: Enter type without quotes.")
+				System.out.println("Please enter one of the two mentioned types.\n Note: Enter type without quotes.");
 			}
 		}while(true);
 		do{
@@ -330,7 +354,6 @@ class Customer extends User{
 			if(loanList.add(temp)){
 				System.out.println("Your loan is issued");
 				temp.showLoanDetails();
-				break;
 			}
 		}
 		if(type=="EducationLoan") {
@@ -338,12 +361,11 @@ class Customer extends User{
 			if(loanList.add(temp)){
 				System.out.println("Your loan is issued");
 				temp.showLoanDetails();
-				break;
 			}
 		}
 	}
 
-//	public void payLoanDueAmount(Integer loanID){
+/*	public void payLoanDueAmount(Integer loanID){
 		for(Loan loan : loanList){
 			if ( loan.getLoanID() == loanID ){
 				if(loan.getDueAmount()<balance){
@@ -355,15 +377,18 @@ class Customer extends User{
 				}
 			}
 		}
+*/
+	public void showCustomerDetails() {
+			
 	}
 }
 
 class Bank{
 	private Admin admin;
 	private ArrayList<Customer> customers = new ArrayList<Customer>();
-	private Integer totalMoneyWithBank=10000000;
-	private Integer totalMoneyleased=0;
-	private boolean bankStarted=flase;
+	private Integer cashInhand=10000000;
+	private Integer totalMoneylent=0;
+	private static boolean bankStarted=false;
 	public static Bank bank;
 	public static int customerID=0;
 
@@ -372,7 +397,6 @@ class Bank{
 		admin.bank=this;
 		bank=this;
 		bankStarted=true;
-		customers = new Customer[1000];
 	}
 	public static Bank getBank(){
 		if(bankStarted==false){
@@ -381,7 +405,34 @@ class Bank{
 		else return bank;
 	}
 
-	public void addCustomers(){
+	public void showBankDetails(Admin admin){
+		if (admin!=this.admin) return;
+		System.out.println("Total no. of customers: " + customers.size());
+		System.out.println("Total no. of accounts: " + getAccountsCount());
+		System.out.println("Total no. of loans: " + getTotalLoans());
+		System.out.println("Total money deposited: " + getTotalMoneyDeposited());
+		System.out.println("Total money lent: " + getTotalMoneyDeposited());
+		System.out.println("Total cash in hand: " + getCashInHand());
+		System.out.println("Total profit earned: " + getProfit());
+	}
+
+	private String getProfit() {
+		return null;
+	}
+	private String getCashInHand() {
+		return null;
+	}
+	private String getTotalMoneyDeposited() {
+
+		return null;
+	}
+	private String getTotalLoans() {
+		return null;
+	}
+	private String getAccountsCount() {
+		return null;
+	}
+	public void addCustomers() throws IOException{
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
 		String name;
 		String userName;
@@ -439,10 +490,27 @@ class Bank{
 			newCustomer.showCustomerDetails();
 		}
 	}
+	
+	private boolean checkUsername(String userName){
+		for(Customer customer : customers){
+			if (customer.userName.equals(userName)) return true;
+		}
+		return false;
+	}
+/*
+	private boolean checkPassword(String password){
+		for(Customer customer : customers){
+			if (customer.password.equals(password)) return true;
+		}
+		return false;
+	}
+*/
 
-	private Customer customerLogin(){
+	public Customer customerLogin() throws IOException{
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
 		Customer temp=null;
+		String userName;
+		String password;
 		Integer input = 1;
 		do{
 			System.out.println("Enter username");
@@ -450,9 +518,9 @@ class Bank{
 			System.out.println("Enter password.");
 			password= new String(br.readLine());
 			temp=null;
-			for(int i=0;i<customers.size();i++){
-				if(customers[i].userName.equals(userName) && customers[i].password.equals(password)){ 
-					temp = customers[i];
+			for(Customer cust : customers){
+				if(cust.userName.equals(userName) && cust.password.equals(password)){ 
+					temp = cust;
 				}
 			}
 			if (temp==null){
@@ -469,18 +537,45 @@ class Bank{
 		return temp;
 	}
 
-	private boolean checkUsername(String userName){
-		for(Customer customer : customers){
-			if customer.username.equals(userName) return true;
-		}
-		return false;
+	public Admin adminLogin() throws IOException{
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		Admin temp=null;
+		String userName;
+		String password;
+		Integer input = 1;
+		do{
+			System.out.println("Enter username");
+			userName = new String(br.readLine());
+			System.out.println("Enter password.");
+			password = new String(br.readLine());
+			temp=null;
+			if(admin.getUserName().equals(userName) && admin.getPassword().equals(password)){ 
+				temp = admin;
+			}
+			if (temp==null){
+				System.out.println("username and password didnt match.");
+				System.out.println("Press 1 to try again");
+				System.out.println("Press 0 to go back to previous menu");
+				input= Integer.parseInt(br.readLine());
+			}
+			else{
+				System.out.println("Logging in..");
+				break;
+			}
+		}while(input!=0);
+		return temp;
 	}
-
-	private boolean checkPassword(String password){
-		for(Customer customer : customers){
-			if customer.password.equals(userName) return true;
-		}
-		return false;
+	public void showProfitStatement(Admin admin2) {
+		
+	}
+	public void grantInterest(Admin admin2) {
+		
+	}
+	public void showFrozenAccounts(Admin admin2) {
+		
+	}
+	public void changeInterestRate(Admin admin2) {
+		
 	}
 }
 	
@@ -489,12 +584,11 @@ public class Test {
 		System.out.println("===============================");
 		System.out.println("Welcome to the Bank of Westeros");
 		System.out.println("===============================");
-		Accounts dir = Accounts.createAccountsDirectry();
-		Bank icici = getBank();
+		Bank icici = Bank.getBank();
+		int input=0;
 		do{
 			showStartMenu();
 			BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-			int input;
 			input=Integer.parseInt(br.readLine());
 			if(input==1) {
 				do{
@@ -532,14 +626,17 @@ public class Test {
 									}	
 									
 								}
-								if(input==5){
+								else if(input==5){
 									cust.issueNewLoan();
 								}
-								if(input==6){
+								else if(input==6){
 									
 								}
-								if(input==7){
+								else if(input==7){
 									
+								}
+								else if(input!=0){
+									System.out.println("Please select one of the above option");
 								}
 							}while(input!=0);
 						}
@@ -550,22 +647,45 @@ public class Test {
 					else if(input!=0){
 					System.out.println("Please select one of the above option");
 					}
-
 				}while(input!=0);
 			}
-
 			else if(input==2){
 				do{
-
+					Admin admin = icici.adminLogin();
+					if(admin==null){}
+					else{
+						do{
+							showAdminMenu();
+							input=Integer.parseInt(br.readLine());
+							if(input==1){
+								icici.showBankDetails(admin);
+							}
+							else if(input==2){
+								icici.showProfitStatement(admin);
+							}
+							else if(input==3){
+								icici.grantInterest(admin);
+							}
+							else if(input==4){
+								icici.showFrozenAccounts(admin);
+							}
+							else if(input==5){
+								icici.changeInterestRate(admin);
+							}
+							else if(input==6){
+								icici.changeInterestRate(admin);
+							}
+							else if(input!=0){
+								System.out.println("Please select one of the above option");
+							}
+						}while(input!=0);
+					}
 				}while(input!=0);
 			}
-
 			else if(input!=0){
 				System.out.println("Please select one of the above option");
 			}
-
 		}while(input!=0);
-		
 	}
 
 	public static void showStartMenu(){
@@ -608,37 +728,4 @@ public class Test {
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
