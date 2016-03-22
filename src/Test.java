@@ -8,7 +8,7 @@ class Account{
 	private Integer accountNumber;
 	private String status;
 	private static int nextAccountNumber=16000;
-	public static final double interest = 4.00;
+	public static final double rateOfInterest = 4.00;
 	
 	Account(Double balance){
 		this.balance=balance;
@@ -19,9 +19,9 @@ class Account{
 	
 	public void showAccountDetails(){
 		System.out.print("Account Number: ");
-		System.out.print(this.getAccountNumber());
+		System.out.println(this.getAccountNumber());
 		System.out.print("Current Balance: ");
-		System.out.println(this.getAccountBalance());
+		System.out.println(this.getBalance());
 		System.out.print("Account Status: ");
 		System.out.println(this.getStatus());
 	}
@@ -36,6 +36,8 @@ class Account{
 			if(amount>0){
 				double temp=balance;
 				balance+=amount;
+				Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+amount);
+				Bank.setCashInHand(Bank.getCashInHand()+amount);
 				if(temp<1000) {
 					System.out.println("Rs. 100 is deducted as your account balance was below \"Minimum Balance\" i.e Rs. 1000, before this transaction.");
 					balance-=100;
@@ -63,6 +65,8 @@ class Account{
 			if(amount>0){
 				if(amount<=balance+1000){
 					balance-=amount;
+					Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+amount);
+					Bank.setCashInHand(Bank.getCashInHand()+amount);
 					System.out.println("Your updated balance is: " + balance.toString());
 					if(balance<0) status="frozen";
 				}
@@ -87,8 +91,22 @@ class Account{
 		return accountNumber;
 	}
 	
-	public Double getAccountBalance(){
+	public Double getBalance(){
 		return balance;
+	}
+
+
+	public Double getRateOfInterest() {
+		return rateOfInterest;
+	}
+
+
+	public boolean grantProfit(Double interest) {
+		profit+=interest;
+		balance+=interest;
+		Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+interest);
+		Bank.setCashInHand(Bank.getCashInHand()-interest);
+		return true;
 	}
 	
 }
@@ -381,13 +399,23 @@ class Customer extends User{
 	public void showCustomerDetails() {
 			
 	}
+	
+	public Integer getNoOfAccount(){
+		return accounts.size();
+	}
+
+	public ArrayList<Account> getAccounts() {
+		return accounts;
+	}
 }
 
 class Bank{
 	private Admin admin;
 	private ArrayList<Customer> customers = new ArrayList<Customer>();
-	private Integer cashInhand=10000000;
-	private Integer totalMoneylent=0;
+	private static Double cashInitially=10000000.0;
+	private static Double cashInHand = 10000000.0;
+	private static Double totalMoneyDeposited=0.0;
+	private static Double totalMoneyLent=0.0;
 	private static boolean bankStarted=false;
 	public static Bank bank;
 	public static int customerID=0;
@@ -397,12 +425,33 @@ class Bank{
 		admin.bank=this;
 		bank=this;
 		bankStarted=true;
+		customers.add(new Customer("Gopal Goel","gopalgoel","iamgopal"));
 	}
 	public static Bank getBank(){
 		if(bankStarted==false){
 			return new Bank();
 		}
 		else return bank;
+	}
+	
+	public static Double getCashInHand(){
+		return cashInHand;
+	}
+	
+	public static Double getTotalMoneyDeposited(){
+		return totalMoneyDeposited;
+	}
+	
+	public static void setCashInHand(Double amount){
+		cashInHand=amount;
+	}
+	
+	public static void setTotalMoneyDeposited(Double amount){
+		totalMoneyDeposited=amount;
+	}
+	
+	public static void setTotalMoneyLent(Double amount){
+		totalMoneyLent=amount;
 	}
 
 	public void showBankDetails(Admin admin){
@@ -416,21 +465,19 @@ class Bank{
 		System.out.println("Total profit earned: " + getProfit());
 	}
 
-	private String getProfit() {
-		return null;
+	public static double getProfit() {
+		return (cashInHand-cashInitially);
 	}
-	private String getCashInHand() {
-		return null;
-	}
-	private String getTotalMoneyDeposited() {
 
-		return null;
+	public static Double getTotalLoans() {
+		return totalMoneyLent;
 	}
-	private String getTotalLoans() {
-		return null;
-	}
-	private String getAccountsCount() {
-		return null;
+	public Integer getAccountsCount() {
+		Integer count=0;
+		for(Customer cus : customers){
+			count+=cus.getNoOfAccount();
+		}
+		return count;
 	}
 	public void addCustomers() throws IOException{
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
@@ -565,17 +612,33 @@ class Bank{
 		}while(input!=0);
 		return temp;
 	}
-	public void showProfitStatement(Admin admin2) {
-		
+	public void showProfitStatement(Admin admin) {
 	}
-	public void grantInterest(Admin admin2) {
-		
+	public void grantInterest(Admin admin) {
+		if (admin!=this.admin) return;
+		Double totalInterestGranted=0.0;
+		for(Customer cus : customers){
+			for(Account acc : cus.getAccounts()){
+				Double interest;
+				interest=(acc.getBalance()*acc.getRateOfInterest())/100.0;
+				if(acc.grantProfit(interest)){
+					totalInterestGranted+=interest;
+				}
+			}
+		}
+		cashInHand-=totalInterestGranted;
+		if(cashInHand<0) System.out.println("Interest granted. Cash in hand is less than zero.");
+		else System.out.println("Interest Granted");
 	}
-	public void showFrozenAccounts(Admin admin2) {
-		
+	public void showFrozenAccounts(Admin admin) {
+		if (admin!=this.admin) return;
+		for(Customer cus : customers){
+			for(Account acc : cus.getAccounts()){
+				if(acc.getStatus()=="frozen") System.out.println("Account No: " + acc.getAccountNumber());
+			}
+		}
 	}
 	public void changeInterestRate(Admin admin2) {
-		
 	}
 }
 	
@@ -585,40 +648,42 @@ public class Test {
 		System.out.println("Welcome to the Bank of Westeros");
 		System.out.println("===============================");
 		Bank icici = Bank.getBank();
-		int input=0;
+		int input1=0;
+		int input2=0;
+		int input3=0;
 		do{
 			showStartMenu();
 			BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-			input=Integer.parseInt(br.readLine());
-			if(input==1) {
+			input1=Integer.parseInt(br.readLine());
+			if(input1==1) {
 				do{
 					showUserMenu();
-					input = Integer.parseInt(br.readLine());
-					if(input==1){
+					input2 = Integer.parseInt(br.readLine());
+					if(input2==1){
 						Customer cust = icici.customerLogin();
 						if(cust==null){}
 						else{
 							do{
 								showCustomerMenu();
-								input=Integer.parseInt(br.readLine());
-								if(input==1){ // open account
+								input3=Integer.parseInt(br.readLine());
+								if(input3==1){ // open account
 									cust.openNewAccount();
 								}
-								else if(input==2){ // deposit money
+								else if(input3==2){ // deposit money
 									Account temp = cust.getAccount();
 									if(temp==null){}
 									else{
 										temp.deposit();
 									}
 								}
-								else if(input==3){
+								else if(input3==3){
 									Account temp = cust.getAccount();
 									if(temp==null){}
 									else{
 										temp.withdraw();
 									}									
 								}
-								else if(input==4){
+								else if(input3==4){
 									Account temp = cust.getAccount();
 									if(temp==null){}
 									else{
@@ -626,66 +691,64 @@ public class Test {
 									}	
 									
 								}
-								else if(input==5){
+								else if(input3==5){
 									cust.issueNewLoan();
 								}
-								else if(input==6){
+								else if(input3==6){
 									
 								}
-								else if(input==7){
+								else if(input3==7){
 									
 								}
-								else if(input!=0){
+								else if(input3!=0){
 									System.out.println("Please select one of the above option");
 								}
-							}while(input!=0);
+							}while(input3!=0);
 						}
 					}
-					else if(input==2){
+					else if(input2==2){
 						icici.addCustomers();
 					}
-					else if(input!=0){
+					else if(input2!=0){
 					System.out.println("Please select one of the above option");
 					}
-				}while(input!=0);
+				}while(input2!=0);
 			}
-			else if(input==2){
-				do{
-					Admin admin = icici.adminLogin();
-					if(admin==null){}
-					else{
-						do{
-							showAdminMenu();
-							input=Integer.parseInt(br.readLine());
-							if(input==1){
-								icici.showBankDetails(admin);
-							}
-							else if(input==2){
-								icici.showProfitStatement(admin);
-							}
-							else if(input==3){
-								icici.grantInterest(admin);
-							}
-							else if(input==4){
-								icici.showFrozenAccounts(admin);
-							}
-							else if(input==5){
-								icici.changeInterestRate(admin);
-							}
-							else if(input==6){
-								icici.changeInterestRate(admin);
-							}
-							else if(input!=0){
-								System.out.println("Please select one of the above option");
-							}
-						}while(input!=0);
-					}
-				}while(input!=0);
+			else if(input1==2){
+				Admin admin = icici.adminLogin();
+				if(admin==null){}
+				else{
+					do{
+						showAdminMenu();
+						input2=Integer.parseInt(br.readLine());
+						if(input2==1){
+							icici.showBankDetails(admin);
+						}
+						else if(input2==2){
+							icici.showProfitStatement(admin);
+						}
+						else if(input2==3){
+							icici.grantInterest(admin);
+						}
+						else if(input2==4){
+							icici.showFrozenAccounts(admin);
+						}
+						else if(input2==5){
+							icici.changeInterestRate(admin);
+						}
+						else if(input2==6){
+							icici.changeInterestRate(admin);
+						}
+						else if(input2!=0){
+							System.out.println("Please select one of the above option");
+						}
+					}while(input2!=0);
+				}
 			}
-			else if(input!=0){
+			else if(input1!=0){
 				System.out.println("Please select one of the above option");
 			}
-		}while(input!=0);
+		}while(input1!=0);
 	}
 
 	public static void showStartMenu(){
@@ -704,7 +767,7 @@ public class Test {
 		System.out.println("Press 5 to change interest rate");
 		System.out.println("Press 6 to change loan rate");
 		System.out.println("Press 7 for other activities");
-		System.out.println("Press 0 to exit");
+		System.out.println("Press 0 to go to previous menu.");
 	}
 
 	public static void showUserMenu(){
@@ -713,7 +776,7 @@ public class Test {
 		System.out.println("Press 2 to register youself as a customer");
 		System.out.println("Press 0 to go back to previous menu");
 	}
-
+	
 	public static void showCustomerMenu(){
 		System.out.println();
 		System.out.println("Press 1 to open a new account");
@@ -723,9 +786,6 @@ public class Test {
 		System.out.println("Press 5 to apply for a loan");
 		System.out.println("Press 6 to make a fixed deposit");
 		System.out.println("Press 7 for other activities");
-		System.out.println("Press 0 to go to previous menu");
-		
+		System.out.println("Press 0 to go to previous menu");	
 	}
-
 }
-
