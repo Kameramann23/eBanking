@@ -16,7 +16,6 @@ class Account{
 		if(balance>=0) status= "active";
 	}
 	
-	
 	public void showAccountDetails(){
 		System.out.print("Account Number: ");
 		System.out.println(this.getAccountNumber());
@@ -24,15 +23,30 @@ class Account{
 		System.out.println(this.getBalance());
 		System.out.print("Account Status: ");
 		System.out.println(this.getStatus());
+		}
+
+	private static Double takeNumberInput() throws IOException{
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Double temp;
+		do{
+			try{
+				temp = Double.parseInt(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			break;
+		}while(true);
+		return temp;
 	}
 
-	public void deposit() throws IOException{
-		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-		Integer amount;	
+	public void deposit(){
+		Double amount;	
 		Integer input = 1;
 		do{
 			System.out.println("How much money you want to deposit?");
-			amount = Integer.parseInt(br.readLine());
+			amount = takeNumberInput();
 			if(amount>0){
 				double temp=balance;
 				balance+=amount;
@@ -45,23 +59,27 @@ class Account{
 				System.out.println("Your updated balance is: " + balance.toString());
 				if(balance>=0) status="active";
 				else status="frozen";
+				input=0;
 			}
 			else{
 				System.out.println("Amount can not be 0 or negative. Please enter a positive amount.");
-				System.out.println("Press 1 to try again");
-				System.out.println("Press 0 to go back to previous menu");
-				input= Integer.parseInt(br.readLine());
+				do{
+					System.out.println("Press 1 to try again");
+					System.out.println("Press 0 to go back to previous menu");
+					input= int(takeNumberInput());
+					if(input==1 || input==0) break;
+					else continue;
+				}while(true);
 			}
 		}while(input!=0);
 	}
 	
-	public void withdraw() throws IOException{
-		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+	public void withdraw(){
 		Integer amount;	
 		int input=0;
 		do{
 			System.out.println("How much money you want to withdraw?");
-			amount = Integer.parseInt(br.readLine());
+			amount = takeNumberInput();
 			if(amount>0){
 				if(amount<=balance+1000){
 					balance-=amount;
@@ -76,9 +94,13 @@ class Account{
 			}
 			else{
 				System.out.println("Amount can not be 0 or negative. Please enter a positive amount.");
-				System.out.println("Press 1 to try again");
-				System.out.println("Press 0 to go back to previous menu");
-				input= Integer.parseInt(br.readLine());
+				do{
+					System.out.println("Press 1 to try again");
+					System.out.println("Press 0 to go back to previous menu");
+					input=int(takeNumberInput());
+					if(input==1 || input==0) break;
+					else continue;
+				}while(true);
 			}
 		}while(input!=0);
 	}
@@ -259,14 +281,29 @@ class Customer extends User{
 		super(name,userName,password);
 	}
 
-	public Account getAccount() throws IOException{
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	private static Double getIntegerInput() throws IOException{
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Integer temp;
+		do{
+			try{
+				temp = Integer.parseInt(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			break;
+		}while(true);
+		return temp;
+	}
+
+	public Account getAccount(){
 		Integer accountNumber;
 		Account temp = null;
 		Integer input = 1 ;
 		do{
 			System.out.println("Enter your account no");
-			accountNumber=Integer.parseInt(br.readLine());
+			accountNumber= getIntegerInput();
 			for(Account account : accounts){
 				if(account.getAccountNumber()==accountNumber){
 					temp=account;
@@ -276,7 +313,7 @@ class Customer extends User{
 				System.out.println("No account with that account Number");
 				System.out.println("Press 1 to try again");
 				System.out.println("Press 0 to go back to previous menu");
-				input= Integer.parseInt(br.readLine());
+				input= getIntegerInput();
 			}
 			else{
 				break;
@@ -295,30 +332,22 @@ class Customer extends User{
 
 	public double getTotalLoanAmount(){
 		double temp=0;
-		for(Loan loan : loanList){
+		for(oan loan : loanList){
 			temp+=loan.amount;
 		}
 		return temp;
 	}
 
-	public void openNewAccount() throws IOException{
-		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+	public void openNewAccount(){
 		Double amount;
 		// Input Amount
-		do{
-			try{
-				System.out.println("How much money would you like to deposit now? Minimum amount to open an account is Rs.1000");
-				amount = Double.parseDouble(br.readLine());
-				if(amount<1000) System.out.println("Sorry we cant open an account with amount " + amount.toString());
-				else {
-					System.out.println("Okay! You will have "+ amount.toString() + " as opening balance"); 
-					break;
-				}
-			}
-			catch(NumberFormatException e){
-				System.out.println("Please enter a number as an Amount");
-			}
-		}while(true);
+		System.out.println("How much money would you like to deposit now? Minimum amount to open an account is Rs.1000");
+		amount = getDoubleInput();
+		if(amount<1000) System.out.println("Sorry we cant open an account with amount " + amount.toString());
+		else {
+			System.out.println("Okay! You will have "+ amount.toString() + " as opening balance"); 
+			break;
+		}
 		Account temp = new Account(amount);
 		if(accounts.add(temp)) {
 			System.out.println("Account created.");
@@ -326,19 +355,17 @@ class Customer extends User{
 		}
 	}	
 
-	public void issueNewLoan() throws IOException{
+	public void issueNewLoan(){
 		if (loanList.size()>10) {
 			System.out.println("Sorry! You cannot have more than 10 loans");
 			return;
 		}
-		
 		String type;
-		Integer amount;
+		Double amount;
 		Double tenureInYears;
-		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
 		do{
 			System.out.println("Enter Type of your loan:\nEnter \"HomeLoan\" for Home Loan\nEnter \"EducationLoan\" for Education Loan");
-			type = new String(br.readLine());
+			type = getStringInput();
 			if(type.equals("HomeLoan") || type.equals("EducationLoan")) break;
 			else{
 				System.out.println("Please enter one of the two mentioned types.\n Note: Enter type without quotes.");
@@ -346,7 +373,7 @@ class Customer extends User{
 		}while(true);
 		do{
 			System.out.println("Enter loan amount");
-			amount = Integer.parseInt(br.readLine());
+			amount = getDoubleInput();
 			if(this.getTotalLoanAmount()+amount>1000000){
 			System.out.println("Sorry! We donot lend more than one million rupees per customer. Try a small amount.");
 			}
@@ -357,7 +384,7 @@ class Customer extends User{
 
 		do{
 			System.out.println("Enter loan duration in years");
-			tenureInYears = Double.parseDouble(br.readLine());
+			tenureInYears = getDoubleInput();
 			if(tenureInYears<=0){
 			System.out.println("Sorry! duration cannot be 0");
 			}
@@ -383,19 +410,23 @@ class Customer extends User{
 		}
 	}
 
-/*	public void payLoanDueAmount(Integer loanID){
+	public void payLoanDueAmount(){
+		int loanID = getLoanID();
 		for(Loan loan : loanList){
 			if ( loan.getLoanID() == loanID ){
 				if(loan.getDueAmount()<balance){
 					System.out.println("Sorry! Not enough balance in your account");
 				}
 				else {
-					balance-=loan.getDueAmount();
+					System.out.println("From which account you would like to pay money?")
+					Account temp =getAccount();
+					temp.setBalance()=temp.getBalance()-loan.getDueAmount();
 					loan.status="inactive";
+					loanList.remove(loan);
 				}
 			}
 		}
-*/
+
 	public void showCustomerDetails() {
 			
 	}
@@ -544,14 +575,7 @@ class Bank{
 		}
 		return false;
 	}
-/*
-	private boolean checkPassword(String password){
-		for(Customer customer : customers){
-			if (customer.password.equals(password)) return true;
-		}
-		return false;
-	}
-*/
+
 
 	public Customer customerLogin() throws IOException{
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
@@ -572,9 +596,18 @@ class Bank{
 			}
 			if (temp==null){
 				System.out.println("username and password didnt match.");
-				System.out.println("Press 1 to try again");
-				System.out.println("Press 0 to go back to previous menu");
-				input= Integer.parseInt(br.readLine());
+				do{
+					System.out.println("Press 1 to try again");
+					System.out.println("Press 0 to go back to previous menu");
+					try{
+						input= Integer.parseInt(br.readLine());
+					}
+					catch(NumberFormatException e){
+						System.out.println("Select one of the above options.");
+						continue;
+					}
+					break;
+				}while(true);
 			}
 			else{
 				System.out.println("Logging in..");
@@ -653,19 +686,18 @@ public class Test {
 		int input3=0;
 		do{
 			showStartMenu();
-			BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-			input1=Integer.parseInt(br.readLine());
+			input1= takeIntegerInput();
 			if(input1==1) {
 				do{
 					showUserMenu();
-					input2 = Integer.parseInt(br.readLine());
+					input2 = takeIntegerInput();
 					if(input2==1){
 						Customer cust = icici.customerLogin();
 						if(cust==null){}
 						else{
 							do{
 								showCustomerMenu();
-								input3=Integer.parseInt(br.readLine());
+								input3=takeIntegerInput();
 								if(input3==1){ // open account
 									cust.openNewAccount();
 								}
@@ -689,13 +721,12 @@ public class Test {
 									else{
 										temp.showAccountDetails();
 									}	
-									
 								}
 								else if(input3==5){
 									cust.issueNewLoan();
 								}
-								else if(input3==6){
-									
+								else if(input3==6){}
+									cus.payLoanDueAmount();
 								}
 								else if(input3==7){
 									
@@ -720,7 +751,7 @@ public class Test {
 				else{
 					do{
 						showAdminMenu();
-						input2=Integer.parseInt(br.readLine());
+						input2=takeIntegerInput();
 						if(input2==1){
 							icici.showBankDetails(admin);
 						}
@@ -749,6 +780,23 @@ public class Test {
 				System.out.println("Please select one of the above option");
 			}
 		}while(input1!=0);
+	}
+
+
+	public static int takeIntegerInput() throws IOException{
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		int temp;
+		do{
+			try{
+				temp = Integer.parseInt(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			break;
+		}while(true);
+		return temp;
 	}
 
 	public static void showStartMenu(){
@@ -784,7 +832,7 @@ public class Test {
 		System.out.println("Press 3 to withdraw money");
 		System.out.println("Press 4 to check account balance");
 		System.out.println("Press 5 to apply for a loan");
-		System.out.println("Press 6 to make a fixed deposit");
+		System.out.println("Press 6 to pay off old loan");
 		System.out.println("Press 7 for other activities");
 		System.out.println("Press 0 to go to previous menu");	
 	}
