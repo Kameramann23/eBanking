@@ -25,28 +25,46 @@ class Account{
 		System.out.println(this.getStatus());
 		}
 
-	private static Double takeNumberInput() throws IOException{
+	private static Double takeDoubleInput(){
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-		Double temp;
+		Double temp=null;
 		do{
 			try{
-				temp = Double.parseInt(br.readLine());
+				temp = Double.parseDouble(br.readLine());
 			}
 			catch(NumberFormatException e){
 				System.out.println("Please enter integer value.");
 				continue;
 			}
+			catch(IOException e){}
 			break;
 		}while(true);
 		return temp;
 	}
 
+	private static Integer takeIntegerInput(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Integer temp=null;
+		do{
+			try{
+				temp = Integer.parseInt(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			catch(IOException e){}
+			break;
+		}while(true);
+		return temp;
+	}
+	
 	public void deposit(){
 		Double amount;	
 		Integer input = 1;
 		do{
 			System.out.println("How much money you want to deposit?");
-			amount = takeNumberInput();
+			amount = takeDoubleInput();
 			if(amount>0){
 				double temp=balance;
 				balance+=amount;
@@ -66,7 +84,7 @@ class Account{
 				do{
 					System.out.println("Press 1 to try again");
 					System.out.println("Press 0 to go back to previous menu");
-					input= int(takeNumberInput());
+					input= takeIntegerInput();
 					if(input==1 || input==0) break;
 					else continue;
 				}while(true);
@@ -75,11 +93,11 @@ class Account{
 	}
 	
 	public void withdraw(){
-		Integer amount;	
+		Double amount;	
 		int input=0;
 		do{
 			System.out.println("How much money you want to withdraw?");
-			amount = takeNumberInput();
+			amount = takeDoubleInput();
 			if(amount>0){
 				if(amount<=balance+1000){
 					balance-=amount;
@@ -97,7 +115,7 @@ class Account{
 				do{
 					System.out.println("Press 1 to try again");
 					System.out.println("Press 0 to go back to previous menu");
-					input=int(takeNumberInput());
+					input=takeIntegerInput();
 					if(input==1 || input==0) break;
 					else continue;
 				}while(true);
@@ -130,25 +148,29 @@ class Account{
 		Bank.setCashInHand(Bank.getCashInHand()-interest);
 		return true;
 	}
+
+	public void setBalance(double d) {
+		balance=d;
+	}
 	
 }
 
 
 
 abstract class Loan{
-	protected double amount;
+	protected Double amount;
 	protected Date startDate;
 	protected Date endDate;
-	protected Double tenureInYears;
+	protected Integer tenureInYears;
 	public String status;
 	private int loanID;
 	private static int loanIssueNumber=1;
-	public Loan(int amount,Double tenureInYears2){
+	public Loan(Double amount,Integer tenureInYears){
 		this.amount=amount;
-		this.tenureInYears=tenureInYears2;
+		this.tenureInYears=tenureInYears;
 		startDate = new Date();
 		endDate = new Date();
-		endDate.setYear((int) (startDate.getYear()+tenureInYears2));
+		endDate.setYear((int) (startDate.getYear()+tenureInYears));
 		status="active";
 		loanID=loanIssueNumber++;
 	}
@@ -178,9 +200,9 @@ class EducationLoan extends Loan{
 	public static double rate = 10.0;
 	private double amountDue;
 
-	public EducationLoan(int amount, Double tenureInYears){
+	public EducationLoan(Double amount, Integer tenureInYears){
 		super(amount,tenureInYears);
-		amountDue=amount*tenureInYears*(100+rate)/100.0;
+		amountDue=amount + amount*tenureInYears*(rate)/100.0;
 	}
 	
 	public void showLoanDetails(){
@@ -216,9 +238,9 @@ class HomeLoan extends Loan{
 	public static double rate = 15.0;
 	private double amountDue;
 	
-	public HomeLoan(int amount, Double tenureInYears){
+	public HomeLoan(Double amount, Integer tenureInYears){
 		super(amount,tenureInYears);
-		amountDue=amount*tenureInYears*(100+rate)/100;
+		amountDue=amount + amount*tenureInYears*(rate)/100;
 	}
 
 	public void showLoanDetails(){
@@ -280,10 +302,37 @@ class Customer extends User{
 	public Customer(String name, String userName, String password){
 		super(name,userName,password);
 	}
-
-	private static Double getIntegerInput() throws IOException{
+	
+	private String getStringInput() {
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
-		Integer temp;
+		String temp=null;
+		try{
+			temp = br.readLine();
+		}
+		catch(IOException e){}
+		return temp;
+	}
+	
+	private static Double takeDoubleInput(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Double temp=null;
+		do{
+			try{
+				temp = Double.parseDouble(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			catch(IOException e){}
+			break;
+		}while(true);
+		return temp;
+	}
+
+	private static Integer takeIntegerInput(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Integer temp=null;
 		do{
 			try{
 				temp = Integer.parseInt(br.readLine());
@@ -292,6 +341,7 @@ class Customer extends User{
 				System.out.println("Please enter integer value.");
 				continue;
 			}
+			catch(IOException e){}
 			break;
 		}while(true);
 		return temp;
@@ -303,7 +353,7 @@ class Customer extends User{
 		Integer input = 1 ;
 		do{
 			System.out.println("Enter your account no");
-			accountNumber= getIntegerInput();
+			accountNumber= takeIntegerInput();
 			for(Account account : accounts){
 				if(account.getAccountNumber()==accountNumber){
 					temp=account;
@@ -313,7 +363,7 @@ class Customer extends User{
 				System.out.println("No account with that account Number");
 				System.out.println("Press 1 to try again");
 				System.out.println("Press 0 to go back to previous menu");
-				input= getIntegerInput();
+				input= takeIntegerInput();
 			}
 			else{
 				break;
@@ -332,7 +382,7 @@ class Customer extends User{
 
 	public double getTotalLoanAmount(){
 		double temp=0;
-		for(oan loan : loanList){
+		for(Loan loan : loanList){
 			temp+=loan.amount;
 		}
 		return temp;
@@ -342,16 +392,15 @@ class Customer extends User{
 		Double amount;
 		// Input Amount
 		System.out.println("How much money would you like to deposit now? Minimum amount to open an account is Rs.1000");
-		amount = getDoubleInput();
+		amount = takeDoubleInput();
 		if(amount<1000) System.out.println("Sorry we cant open an account with amount " + amount.toString());
 		else {
 			System.out.println("Okay! You will have "+ amount.toString() + " as opening balance"); 
-			break;
-		}
-		Account temp = new Account(amount);
-		if(accounts.add(temp)) {
-			System.out.println("Account created.");
-			temp.showAccountDetails();
+			Account temp = new Account(amount);
+			if(accounts.add(temp)) {
+				System.out.println("Account created.");
+				temp.showAccountDetails();
+			}
 		}
 	}	
 
@@ -360,9 +409,13 @@ class Customer extends User{
 			System.out.println("Sorry! You cannot have more than 10 loans");
 			return;
 		}
+		else if(accounts.size()==0){
+			System.out.println("Sorry! You must have an account to apply for loan");
+			return;
+		}
 		String type;
 		Double amount;
-		Double tenureInYears;
+		Integer tenureInYears;
 		do{
 			System.out.println("Enter Type of your loan:\nEnter \"HomeLoan\" for Home Loan\nEnter \"EducationLoan\" for Education Loan");
 			type = getStringInput();
@@ -373,8 +426,12 @@ class Customer extends User{
 		}while(true);
 		do{
 			System.out.println("Enter loan amount");
-			amount = getDoubleInput();
-			if(this.getTotalLoanAmount()+amount>1000000){
+			amount = takeDoubleInput();
+			if(amount<=0){
+			System.out.println("Sorry! Amount must be positive");
+			continue;
+			}
+			else if(this.getTotalLoanAmount()+amount>1000000){
 			System.out.println("Sorry! We donot lend more than one million rupees per customer. Try a small amount.");
 			}
 			else{
@@ -384,9 +441,9 @@ class Customer extends User{
 
 		do{
 			System.out.println("Enter loan duration in years");
-			tenureInYears = getDoubleInput();
+			tenureInYears = takeIntegerInput();
 			if(tenureInYears<=0){
-			System.out.println("Sorry! duration cannot be 0");
+			System.out.println("Sorry! Duration must be positive");
 			}
 			else{
 				break;
@@ -394,14 +451,14 @@ class Customer extends User{
 		}while(true);
 
 
-		if(type=="HomeLoan") {
+		if(type.equals("HomeLoan")) {
 			HomeLoan temp = new HomeLoan(amount,tenureInYears);
 			if(loanList.add(temp)){
 				System.out.println("Your loan is issued");
 				temp.showLoanDetails();
 			}
 		}
-		if(type=="EducationLoan") {
+		if(type.equals("EducationLoan")) {
 			EducationLoan temp = new EducationLoan(amount,tenureInYears);
 			if(loanList.add(temp)){
 				System.out.println("Your loan is issued");
@@ -411,21 +468,31 @@ class Customer extends User{
 	}
 
 	public void payLoanDueAmount(){
-		int loanID = getLoanID();
+		int loanID = takeLoanID();
 		for(Loan loan : loanList){
 			if ( loan.getLoanID() == loanID ){
-				if(loan.getDueAmount()<balance){
+				System.out.println("From which account you would like to pay money?");
+				Account temp =getAccount();
+				if(loan.getDueAmount()>temp.getBalance()){
 					System.out.println("Sorry! Not enough balance in your account");
 				}
 				else {
-					System.out.println("From which account you would like to pay money?")
-					Account temp =getAccount();
-					temp.setBalance()=temp.getBalance()-loan.getDueAmount();
+					temp.setBalance(temp.getBalance()-loan.getDueAmount());
 					loan.status="inactive";
-					loanList.remove(loan);
 				}
+				return;
 			}
 		}
+		// if no loan with that loan id.
+		System.out.println("No loan with that loan ID");
+		return;
+	}
+
+	private int takeLoanID() {
+		System.out.println("Enter the load ID");
+		int temp = takeIntegerInput();
+		return temp;
+	}
 
 	public void showCustomerDetails() {
 			
@@ -456,7 +523,7 @@ class Bank{
 		admin.bank=this;
 		bank=this;
 		bankStarted=true;
-		customers.add(new Customer("Gopal Goel","gopalgoel","iamgopal"));
+		customers.add(new Customer("Gopal Goel","g","g"));
 	}
 	public static Bank getBank(){
 		if(bankStarted==false){
@@ -673,6 +740,10 @@ class Bank{
 	}
 	public void changeInterestRate(Admin admin2) {
 	}
+	public void changeLoanRate(Admin admin2) {
+		// TODO Auto-generated method stub
+		
+	}
 }
 	
 public class Test {
@@ -725,11 +796,8 @@ public class Test {
 								else if(input3==5){
 									cust.issueNewLoan();
 								}
-								else if(input3==6){}
-									cus.payLoanDueAmount();
-								}
-								else if(input3==7){
-									
+								else if(input3==6){
+									cust.payLoanDueAmount();
 								}
 								else if(input3!=0){
 									System.out.println("Please select one of the above option");
@@ -768,7 +836,7 @@ public class Test {
 							icici.changeInterestRate(admin);
 						}
 						else if(input2==6){
-							icici.changeInterestRate(admin);
+							icici.changeLoanRate(admin);
 						}
 						else if(input2!=0){
 							System.out.println("Please select one of the above option");
@@ -808,8 +876,8 @@ public class Test {
 
 	public static void showAdminMenu(){
 		System.out.println();
-		System.out.println("Press 1 to check total money in bank");
-		System.out.println("Press 2 to check total amount of loans leased");
+		System.out.println("Press 1 to show bank details");
+		System.out.println("Press 2 to show Profit statement");
 		System.out.println("Press 3 to show all frozen Accounts");
 		System.out.println("Press 4 to grant interest to all Accounts");
 		System.out.println("Press 5 to change interest rate");
@@ -833,7 +901,6 @@ public class Test {
 		System.out.println("Press 4 to check account balance");
 		System.out.println("Press 5 to apply for a loan");
 		System.out.println("Press 6 to pay off old loan");
-		System.out.println("Press 7 for other activities");
 		System.out.println("Press 0 to go to previous menu");	
 	}
 }
