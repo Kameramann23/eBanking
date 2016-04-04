@@ -3,12 +3,12 @@ import java.util.ArrayList;
 import java.util.Date;
 
 class Account{
-	private Double balance;
-	private Double profit;
+	private Double balance=0.0;
+	private Double profit=0.0;
 	private Integer accountNumber;
 	private String status;
 	private static int nextAccountNumber=16000;
-	public static final double rateOfInterest = 4.00;
+	public static double rateOfInterest = 4.00;
 	
 	Account(Double balance){
 		this.balance=balance;
@@ -69,7 +69,6 @@ class Account{
 				double temp=balance;
 				balance+=amount;
 				Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+amount);
-				Bank.setCashInHand(Bank.getCashInHand()+amount);
 				if(temp<1000) {
 					System.out.println("Rs. 100 is deducted as your account balance was below \"Minimum Balance\" i.e Rs. 1000, before this transaction.");
 					balance-=100;
@@ -101,8 +100,7 @@ class Account{
 			if(amount>0){
 				if(amount<=balance+1000){
 					balance-=amount;
-					Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+amount);
-					Bank.setCashInHand(Bank.getCashInHand()+amount);
+					Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()-amount);
 					System.out.println("Your updated balance is: " + balance.toString());
 					if(balance<0) status="frozen";
 				}
@@ -141,11 +139,9 @@ class Account{
 	}
 
 
-	public boolean grantProfit(Double interest) {
+	public boolean grantProfit(double interest) {
 		profit+=interest;
 		balance+=interest;
-		Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+interest);
-		Bank.setCashInHand(Bank.getCashInHand()-interest);
 		return true;
 	}
 
@@ -395,9 +391,10 @@ class Customer extends User{
 		amount = takeDoubleInput();
 		if(amount<1000) System.out.println("Sorry we cant open an account with amount " + amount.toString());
 		else {
-			System.out.println("Okay! You will have "+ amount.toString() + " as opening balance"); 
+			System.out.println("Okay! You have "+ amount.toString() + " as opening balance"); 
 			Account temp = new Account(amount);
 			if(accounts.add(temp)) {
+				Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+amount);
 				System.out.println("Account created.");
 				temp.showAccountDetails();
 			}
@@ -434,6 +431,9 @@ class Customer extends User{
 			else if(this.getTotalLoanAmount()+amount>1000000){
 			System.out.println("Sorry! We donot lend more than one million rupees per customer. Try a small amount.");
 			}
+			else if(amount>Bank.getCashInHand()){
+				System.out.println("Sorry Bank doesn't have enough funds. You make take loan of maximum Rs. " + Bank.getCashInHand());
+			}
 			else{
 				break;
 			}
@@ -454,6 +454,7 @@ class Customer extends User{
 		if(type.equals("HomeLoan")) {
 			HomeLoan temp = new HomeLoan(amount,tenureInYears);
 			if(loanList.add(temp)){
+				Bank.setTotalMoneyLent(Bank.getTotalMoneyLent()+amount);
 				System.out.println("Your loan is issued");
 				temp.showLoanDetails();
 			}
@@ -461,6 +462,7 @@ class Customer extends User{
 		if(type.equals("EducationLoan")) {
 			EducationLoan temp = new EducationLoan(amount,tenureInYears);
 			if(loanList.add(temp)){
+				Bank.setTotalMoneyLent(Bank.getTotalMoneyLent()+amount);
 				System.out.println("Your loan is issued");
 				temp.showLoanDetails();
 			}
@@ -478,7 +480,12 @@ class Customer extends User{
 				}
 				else {
 					temp.setBalance(temp.getBalance()-loan.getDueAmount());
+					Bank.setTotalMoneyLent(Bank.getTotalMoneyLent()-loan.getLoanAmount());
+					Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()-loan.getDueAmount());
+					Bank.setProfit(Bank.getProfit()+(loan.getDueAmount()-loan.getLoanAmount()));
+					System.out.println("Loan succesfully paid off");
 					loan.status="inactive";
+					loanList.remove(loan);
 				}
 				return;
 			}
@@ -505,13 +512,18 @@ class Customer extends User{
 	public ArrayList<Account> getAccounts() {
 		return accounts;
 	}
+
+	public Integer getNoOfLoans() {
+		return loanList.size();
+	}
 }
 
 class Bank{
 	private Admin admin;
 	private ArrayList<Customer> customers = new ArrayList<Customer>();
+	private static Double profit=0.0;
 	private static Double cashInitially=10000000.0;
-	private static Double cashInHand = 10000000.0;
+	private static Double cashInHand = cashInitially;
 	private static Double totalMoneyDeposited=0.0;
 	private static Double totalMoneyLent=0.0;
 	private static boolean bankStarted=false;
@@ -532,7 +544,16 @@ class Bank{
 		else return bank;
 	}
 	
+	public static Double getProfit(){
+		return profit;
+	}
+
+	public static void setProfit(Double profit){
+		Bank.profit=profit;
+	} 
+
 	public static Double getCashInHand(){
+		setCashInHand();
 		return cashInHand;
 	}
 	
@@ -540,8 +561,8 @@ class Bank{
 		return totalMoneyDeposited;
 	}
 	
-	public static void setCashInHand(Double amount){
-		cashInHand=amount;
+	public static void setCashInHand(){
+		cashInHand=cashInitially+totalMoneyDeposited-totalMoneyLent;
 	}
 	
 	public static void setTotalMoneyDeposited(Double amount){
@@ -556,18 +577,14 @@ class Bank{
 		if (admin!=this.admin) return;
 		System.out.println("Total no. of customers: " + customers.size());
 		System.out.println("Total no. of accounts: " + getAccountsCount());
-		System.out.println("Total no. of loans: " + getTotalLoans());
+		System.out.println("Total no. of loans: " + getLoansCount());
 		System.out.println("Total money deposited: " + getTotalMoneyDeposited());
-		System.out.println("Total money lent: " + getTotalMoneyDeposited());
+		System.out.println("Total money lent: " + getTotalMoneyLent());
 		System.out.println("Total cash in hand: " + getCashInHand());
 		System.out.println("Total profit earned: " + getProfit());
 	}
 
-	public static double getProfit() {
-		return (cashInHand-cashInitially);
-	}
-
-	public static Double getTotalLoans() {
+	public static Double getTotalMoneyLent() {
 		return totalMoneyLent;
 	}
 	public Integer getAccountsCount() {
@@ -577,6 +594,15 @@ class Bank{
 		}
 		return count;
 	}
+
+	public Integer getLoansCount() {
+		Integer count=0;
+		for(Customer cus : customers){
+			count+=cus.getNoOfLoans();
+		}
+		return count;
+	}
+
 	public void addCustomers() throws IOException{
 		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
 		String name;
@@ -605,7 +631,7 @@ class Bank{
 					System.out.println("Username already exists. Please Choose another.");
 				}
 				else{
-					System.out.println("Your username is: "+ name);
+					System.out.println("Your username is: "+ userName);
 					break;
 				}
 			}
@@ -712,37 +738,107 @@ class Bank{
 		}while(input!=0);
 		return temp;
 	}
-	public void showProfitStatement(Admin admin) {
+
+	private static Double takeDoubleInput(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Double temp=null;
+		do{
+			try{
+				temp = Double.parseDouble(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			catch(IOException e){}
+			break;
+		}while(true);
+		return temp;
+	}
+
+	private static Integer takeIntegerInput(){
+		BufferedReader br = new BufferedReader ( new InputStreamReader(System.in));
+		Integer temp=null;
+		do{
+			try{
+				temp = Integer.parseInt(br.readLine());
+			}
+			catch(NumberFormatException e){
+				System.out.println("Please enter integer value.");
+				continue;
+			}
+			catch(IOException e){}
+			break;
+		}while(true);
+		return temp;
+	}
+	
+
+	public void showProfit(Admin admin) {
+		System.out.println("Profit Earned till date is: " + getProfit());
 	}
 	public void grantInterest(Admin admin) {
 		if (admin!=this.admin) return;
 		Double totalInterestGranted=0.0;
 		for(Customer cus : customers){
 			for(Account acc : cus.getAccounts()){
-				Double interest;
+				double interest=0;
 				interest=(acc.getBalance()*acc.getRateOfInterest())/100.0;
 				if(acc.grantProfit(interest)){
 					totalInterestGranted+=interest;
 				}
 			}
 		}
-		cashInHand-=totalInterestGranted;
-		if(cashInHand<0) System.out.println("Interest granted. Cash in hand is less than zero.");
-		else System.out.println("Interest Granted");
+		Bank.setTotalMoneyDeposited(Bank.getTotalMoneyDeposited()+totalInterestGranted);
+		Bank.setProfit(Bank.getProfit()-totalInterestGranted);
+		System.out.println("Interest Granted");
 	}
-	public void showFrozenAccounts(Admin admin) {
+	public void showAllAccounts(Admin admin) {
 		if (admin!=this.admin) return;
 		for(Customer cus : customers){
 			for(Account acc : cus.getAccounts()){
-				if(acc.getStatus()=="frozen") System.out.println("Account No: " + acc.getAccountNumber());
+				System.out.println("Account No: " + acc.getAccountNumber() + " " + "Balance: " + acc.getBalance());
 			}
 		}
 	}
-	public void changeInterestRate(Admin admin2) {
+	public void changeInterestRate(Admin admin) {
+		if(this.admin==admin){
+			System.out.println("Enter new Interest Rate in %");
+			Integer temp=takeIntegerInput();
+			Account.rateOfInterest=temp;
+			System.out.println("Rate of Interest is now " + Account.rateOfInterest + "% ");
+		}
 	}
-	public void changeLoanRate(Admin admin2) {
-		// TODO Auto-generated method stub
-		
+	public void changeLoanRate(Admin admin) {
+		if(this.admin==admin){
+			int temp=-1;
+			while(true){
+				System.out.println("Press 1 to change Home Loan Rate");
+				System.out.println("Press 2 to change Education Loan Rate");
+				System.out.println("Press 0 to go back to previous menu");
+				temp = takeIntegerInput();
+				if(temp==1){
+				System.out.println("Enter new Loan Rate in %");
+				Double temp2=takeDoubleInput();
+				HomeLoan.rate=temp2;
+				System.out.println("Rate of Loan is now " + HomeLoan.rate + "% ");
+				break;
+				}	
+				else if(temp==2){
+				System.out.println("Enter new Loan Rate in %");
+				Double temp2=takeDoubleInput();
+				EducationLoan.rate=temp2;
+				System.out.println("Rate of Loan is now " + EducationLoan.rate + "% ");
+				break;
+				}	
+				else if(temp==0){
+					break;
+				}
+				else{
+					System.out.println("Please enter one of the given options");
+				}
+			}
+		}	
 	}
 }
 	
@@ -824,13 +920,13 @@ public class Test {
 							icici.showBankDetails(admin);
 						}
 						else if(input2==2){
-							icici.showProfitStatement(admin);
+							icici.showProfit(admin);
 						}
 						else if(input2==3){
-							icici.grantInterest(admin);
+							icici.showAllAccounts(admin);
 						}
 						else if(input2==4){
-							icici.showFrozenAccounts(admin);
+							icici.grantInterest(admin);
 						}
 						else if(input2==5){
 							icici.changeInterestRate(admin);
@@ -877,12 +973,12 @@ public class Test {
 	public static void showAdminMenu(){
 		System.out.println();
 		System.out.println("Press 1 to show bank details");
-		System.out.println("Press 2 to show Profit statement");
-		System.out.println("Press 3 to show all frozen Accounts");
+		System.out.println("Press 2 to see profit earned");
+		System.out.println("Press 3 to show all Accounts");
 		System.out.println("Press 4 to grant interest to all Accounts");
 		System.out.println("Press 5 to change interest rate");
 		System.out.println("Press 6 to change loan rate");
-		System.out.println("Press 7 for other activities");
+		//System.out.println("Press 7 for other activities");
 		System.out.println("Press 0 to go to previous menu.");
 	}
 
@@ -901,6 +997,7 @@ public class Test {
 		System.out.println("Press 4 to check account balance");
 		System.out.println("Press 5 to apply for a loan");
 		System.out.println("Press 6 to pay off old loan");
+		System.out.println("Press 7 to show all my accounts and loans. // not yet working");
 		System.out.println("Press 0 to go to previous menu");	
 	}
 }
