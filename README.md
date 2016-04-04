@@ -2,5 +2,7 @@
 
 This is a project to create a Java code to work as a Banking application. 
 It allows to open savings account and perform bank related activities like applying for a loan, etc.
-Currently only the customer functionality is working. Few are yet to be implemented.
-Admin menu has not be developed yet.
+Presently all processes are working appropriately. Code not tested yet. Much more to be implemented.
+Please test the program and report bugs.
+
+P.S: This is my first code above 1000 lines. So Yay! 
